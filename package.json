@@ -1,0 +1,64 @@
+{
+	"name": "@eimerreis/az-npm",
+	"version": "0.1.0",
+	"description": "Zero-config CLI that authenticates npm, pnpm, and bun registries against Azure DevOps Artifacts feeds using the Azure CLI.",
+	"type": "module",
+	"author": "Moritz Frölich <mail@moritzfroelich.de>",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/eimerreis/az-npm.git"
+	},
+	"homepage": "https://github.com/eimerreis/az-npm#readme",
+	"bugs": {
+		"url": "https://github.com/eimerreis/az-npm/issues"
+	},
+	"keywords": [
+		"azure-devops",
+		"npm",
+		"pnpm",
+		"bun",
+		"artifacts",
+		"cli",
+		"auth"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"bin": {
+		"az-npm": "./dist/bin.js"
+	},
+	"exports": {
+		".": "./dist/index.js",
+		"./cli": "./dist/cli.js"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"build": "bun build src/bin.ts src/cli.ts src/index.ts --outdir dist --target node",
+		"build:bin": "bun build src/bin.ts --compile --outfile dist/az-npm-auth",
+		"changeset": "changeset",
+		"release": "bun run build && changeset publish",
+		"version-packages": "changeset version",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"ini": "^5.0.0",
+		"jose": "^6.1.0",
+		"smol-toml": "^1.4.2"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.29.7",
+		"@biomejs/biome": "^2.2.4",
+		"@types/bun": "^1.3.0",
+		"typescript": "^5.9.3"
+	}
+}
