@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/%40eimerreis%2Faz-npm)](https://www.npmjs.com/package/@eimerreis/az-npm)
 [![Release](https://github.com/eimerreis/az-npm/actions/workflows/release.yml/badge.svg)](https://github.com/eimerreis/az-npm/actions/workflows/release.yml)
 
-Zero-config CLI that authenticates npm, pnpm, and bun registries against Azure DevOps Artifacts feeds using the Azure CLI.
+Zero-config CLI that authenticates npm, pnpm, and bun against Azure DevOps Artifact private feeds using the Azure CLI.
 
 ## Usage
 
