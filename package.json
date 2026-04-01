@@ -1,6 +1,6 @@
 {
 	"name": "@eimerreis/az-npm",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Zero-config CLI that authenticates npm, pnpm, and bun registries against Azure DevOps Artifacts feeds using the Azure CLI.",
 	"type": "module",
 	"author": "Moritz Frölich <mail@moritzfroelich.de>",
