@@ -11,6 +11,7 @@ export type CliArgs = {
 export type CliDependencies = {
 	authenticate?: typeof authenticate;
 	error?: (message?: unknown, ...optionalParams: unknown[]) => void;
+	setExitCode?: (code: number) => void;
 	log?: (message?: unknown, ...optionalParams: unknown[]) => void;
 };
 
@@ -21,6 +22,11 @@ export async function runCli(
 	const args = parseArgs(argv);
 	const log = dependencies.log ?? console.log;
 	const error = dependencies.error ?? console.error;
+	const setExitCode =
+		dependencies.setExitCode ??
+		((code: number) => {
+			process.exitCode = code;
+		});
 
 	if (args.help) {
 		log(getHelpText());
@@ -36,7 +42,7 @@ export async function runCli(
 		cwd: args.cwd,
 		token: args.token,
 	});
-	applyResult(result, { error, log });
+	applyResult(result, { error, log, setExitCode });
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -88,11 +94,11 @@ Options:
 
 function applyResult(
 	result: AuthenticateResult,
-	output: Pick<CliDependencies, "error" | "log">,
+	output: Pick<CliDependencies, "error" | "log" | "setExitCode">,
 ): void {
 	if (!result.ok) {
 		output.error?.(result.message);
-		process.exitCode = result.code === "token_failed" ? 1 : 2;
+		output.setExitCode?.(result.code === "token_failed" ? 1 : 2);
 		return;
 	}
 

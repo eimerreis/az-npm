@@ -1,10 +1,6 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { getHelpText, parseArgs, runCli } from "./cli.ts";
-
-afterEach(() => {
-	process.exitCode = undefined;
-});
 
 describe("parseArgs", () => {
 	test("parses token and cwd flags", () => {
@@ -31,7 +27,6 @@ describe("runCli", () => {
 		await runCli(["--help"], { log });
 
 		expect(log).toHaveBeenCalledWith(getHelpText());
-		expect(process.exitCode).toBeUndefined();
 	});
 
 	test("prints version for --version", async () => {
@@ -44,6 +39,7 @@ describe("runCli", () => {
 
 	test("sets exit code 2 for non-token failures", async () => {
 		const error = mock(() => undefined);
+		const setExitCode = mock(() => undefined);
 
 		await runCli([], {
 			authenticate: async () => ({
@@ -52,10 +48,11 @@ describe("runCli", () => {
 				ok: false,
 			}),
 			error,
+			setExitCode,
 		});
 
 		expect(error).toHaveBeenCalledWith("missing lockfile");
-		expect(process.exitCode).toBe(2);
+		expect(setExitCode).toHaveBeenCalledWith(2);
 	});
 
 	test("passes through explicit token and cwd", async () => {

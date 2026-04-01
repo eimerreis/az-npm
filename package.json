@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/eimerreis/az-npm.git"
+		"url": "git+https://github.com/eimerreis/az-npm.git"
 	},
 	"homepage": "https://github.com/eimerreis/az-npm#readme",
 	"bugs": {
@@ -31,7 +31,7 @@
 		"LICENSE"
 	],
 	"bin": {
-		"az-npm": "./dist/bin.js"
+		"az-npm": "dist/bin.js"
 	},
 	"exports": {
 		".": "./dist/index.js",
