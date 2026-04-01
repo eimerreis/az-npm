@@ -33,6 +33,56 @@ describe("discoverFeeds", () => {
 		]);
 	});
 
+	test("uses bunfig.toml first for bun projects", async () => {
+		const cwd = await createEmptyProject();
+		await writeFile(
+			join(cwd, "bunfig.toml"),
+			'[install.scopes]\n"@acme" = { token = "bun-token", url = "https://pkgs.dev.azure.com/acme/web/_packaging/shared/npm/registry/" }\n',
+			"utf8",
+		);
+		await writeFile(
+			join(cwd, ".npmrc"),
+			"@fallback:registry=https://pkgs.dev.azure.com/acme/web/_packaging/fallback/npm/registry/\n",
+			"utf8",
+		);
+
+		expect(await discoverFeeds({ cwd, packageManager: "bun" })).toEqual([
+			{
+				feed: "shared",
+				organization: "acme",
+				project: "web",
+				registryUrl: "https://pkgs.dev.azure.com/acme/web/_packaging/shared/npm/registry/",
+				scopes: ["@acme"],
+				urlType: "azure-devops",
+			},
+		]);
+	});
+
+	test("falls back to project .npmrc for bun projects when bunfig has no Azure registry", async () => {
+		const cwd = await createEmptyProject();
+		await writeFile(
+			join(cwd, "bunfig.toml"),
+			'[install]\nregistry = "https://registry.npmjs.org/"\n',
+			"utf8",
+		);
+		await writeFile(
+			join(cwd, ".npmrc"),
+			"@acme:registry=https://pkgs.dev.azure.com/acme/web/_packaging/shared/npm/registry/\n",
+			"utf8",
+		);
+
+		expect(await discoverFeeds({ cwd, packageManager: "bun" })).toEqual([
+			{
+				feed: "shared",
+				organization: "acme",
+				project: "web",
+				registryUrl: "https://pkgs.dev.azure.com/acme/web/_packaging/shared/npm/registry/",
+				scopes: ["@acme"],
+				urlType: "azure-devops",
+			},
+		]);
+	});
+
 	test("parses legacy visualstudio registry URLs from auth keys and de-duplicates them", async () => {
 		const cwd = await createProject(`
 @acme:registry=https://acme.pkgs.visualstudio.com/_packaging/tooling/npm/registry/
@@ -78,6 +128,19 @@ describe("discoverFeeds", () => {
 		const cwd = await createEmptyProject();
 
 		await expect(discoverFeeds({ cwd })).rejects.toBeInstanceOf(DiscoverFeedsError);
+	});
+
+	test("throws a typed error when bun project config contains no Azure registry", async () => {
+		const cwd = await createEmptyProject();
+		await writeFile(
+			join(cwd, "bunfig.toml"),
+			'[install]\nregistry = "https://registry.npmjs.org/"\n',
+			"utf8",
+		);
+
+		await expect(discoverFeeds({ cwd, packageManager: "bun" })).rejects.toBeInstanceOf(
+			DiscoverFeedsError,
+		);
 	});
 });
 

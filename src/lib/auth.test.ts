@@ -66,20 +66,24 @@ describe("authenticate", () => {
 	test("uses the bun writer for bun projects", async () => {
 		const writeBunfigCredentials = mock(async () => ({ filePath: "/Users/test/.bunfig.toml" }));
 		const writeNpmrcCredentials = mock(async () => ({ filePath: "/Users/test/.npmrc" }));
+		const discoverFeeds = mock(async (options?: { packageManager?: string }) => {
+			expect(options?.packageManager).toBe("bun");
+			return [
+				{
+					feed: "shared",
+					organization: "acme",
+					project: undefined,
+					registryUrl: "https://acme.pkgs.visualstudio.com/_packaging/shared/npm/registry/",
+					scopes: ["@acme"],
+					urlType: "visualstudio" as const,
+				},
+			];
+		});
 
 		const result = await authenticate({
 			dependencies: {
 				detectPackageManager: async () => "bun",
-				discoverFeeds: async () => [
-					{
-						feed: "shared",
-						organization: "acme",
-						project: undefined,
-						registryUrl: "https://acme.pkgs.visualstudio.com/_packaging/shared/npm/registry/",
-						scopes: ["@acme"],
-						urlType: "visualstudio",
-					},
-				],
+				discoverFeeds,
 				resolveToken: async () => ({ source: "env", token: "token" }),
 				writeBunfigCredentials,
 				writeNpmrcCredentials,

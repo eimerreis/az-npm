@@ -81,6 +81,30 @@ describe("writeBunfigCredentials", () => {
 			'url = "https://acme.pkgs.visualstudio.com/_packaging/tooling/npm/registry/"',
 		);
 	});
+
+	test("throws a typed error when a feed has no scopes", async () => {
+		const homeDirectory = await createHomeDirectory();
+		process.env.HOME = homeDirectory;
+
+		const { WriteBunfigCredentialsError, writeBunfigCredentials } = await import("./bunfig.ts");
+		await expect(
+			writeBunfigCredentials({
+				feeds: [
+					{
+						feed: "tooling",
+						organization: "acme",
+						project: undefined,
+						registryUrl: "https://acme.pkgs.visualstudio.com/_packaging/tooling/npm/registry/",
+						scopes: [],
+						urlType: "visualstudio",
+					},
+				],
+				packageManager: "bun",
+				token: "bun-token",
+				tokenSource: "env",
+			}),
+		).rejects.toBeInstanceOf(WriteBunfigCredentialsError);
+	});
 });
 
 async function createHomeDirectory(): Promise<string> {

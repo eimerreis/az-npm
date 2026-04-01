@@ -1,4 +1,4 @@
-# az-npm-auth
+# az-npm
 
 Zero-config CLI that authenticates npm, pnpm, and bun registries against Azure DevOps Artifacts feeds using the Azure CLI.
 

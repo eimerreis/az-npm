@@ -37,6 +37,15 @@ describe("runCli", () => {
 		expect(log).toHaveBeenCalledWith("0.1.0");
 	});
 
+	test("documents exit codes and public name in help text", () => {
+		const helpText = getHelpText();
+
+		expect(helpText).toContain("az-npm");
+		expect(helpText).toContain("Exit codes:");
+		expect(helpText).toContain("1                 Token acquisition failed");
+		expect(helpText).toContain("2                 Detection, discovery, or write failed");
+	});
+
 	test("sets exit code 2 for non-token failures", async () => {
 		const error = mock(() => undefined);
 		const setExitCode = mock(() => undefined);

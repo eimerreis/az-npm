@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { authenticate } from "./index.ts";
 import type { AuthenticateResult } from "./lib/auth.ts";
 
@@ -34,7 +36,7 @@ export async function runCli(
 	}
 
 	if (args.version) {
-		log("0.1.0");
+		log(getPackageVersion());
 		return;
 	}
 
@@ -80,7 +82,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 export function getHelpText(): string {
-	return `az-npm-auth
+	return `az-npm
 
 Usage:
   npx @eimerreis/az-npm [--token TOKEN] [--cwd PATH]
@@ -89,7 +91,25 @@ Options:
   --token <token>   Use an explicit Azure DevOps token
   --cwd <path>      Use a specific project directory
   -h, --help        Show help
-  -v, --version     Show version`;
+  -v, --version     Show version
+
+Exit codes:
+  0                 Authentication succeeded
+  1                 Token acquisition failed
+  2                 Detection, discovery, or write failed`;
+}
+
+function getPackageVersion(): string {
+	const packageJsonPath = new URL("../package.json", import.meta.url);
+	const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
+		version?: unknown;
+	};
+
+	if (typeof packageJson.version !== "string" || packageJson.version.length === 0) {
+		throw new Error(`Could not determine package version from ${packageJsonPath.pathname}.`);
+	}
+
+	return packageJson.version;
 }
 
 function applyResult(

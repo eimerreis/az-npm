@@ -19,9 +19,23 @@ type BunfigScopeConfig = {
 	[key: string]: unknown;
 };
 
+export class WriteBunfigCredentialsError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "WriteBunfigCredentialsError";
+	}
+}
+
 export async function writeBunfigCredentials(
 	options: CredentialWriterOptions,
 ): Promise<{ filePath: string }> {
+	const unsupportedFeeds = options.feeds.filter((feed) => feed.scopes.length === 0);
+	if (unsupportedFeeds.length > 0) {
+		throw new WriteBunfigCredentialsError(
+			"Could not write Bun credentials for unscoped Azure DevOps feeds. Bun auth currently requires at least one scoped registry.",
+		);
+	}
+
 	const filePath = join(getHomeDirectory(), ".bunfig.toml");
 	const document = await readBunfig(filePath);
 	const existingInstall = document.install ?? {};

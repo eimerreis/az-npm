@@ -32,10 +32,12 @@ export type AuthenticateResult =
 			tokenSource: ResolveTokenResult["source"];
 	  }
 	| {
-			code: "detect_failed" | "feed_failed" | "token_failed" | "write_failed";
+			code: AuthenticateFailureCode;
 			message: string;
 			ok: false;
 	  };
+
+type AuthenticateFailureCode = "detect_failed" | "feed_failed" | "token_failed" | "write_failed";
 
 export type CredentialWriter = (options: CredentialWriterOptions) => Promise<{ filePath: string }>;
 
@@ -62,7 +64,7 @@ export async function authenticate(options: AuthenticateOptions = {}): Promise<A
 
 	let feeds: AzureFeed[];
 	try {
-		feeds = await discover({ cwd: options.cwd });
+		feeds = await discover({ cwd: options.cwd, packageManager });
 	} catch (error) {
 		return fail("feed_failed", error);
 	}
@@ -111,10 +113,7 @@ function selectWriter(
 	return dependencies.writeNpmrcCredentials ?? writeNpmrcCredentials;
 }
 
-function fail(
-	code: AuthenticateResult extends { ok: false; code: infer Code } ? Code : never,
-	error: unknown,
-): AuthenticateResult {
+function fail(code: AuthenticateFailureCode, error: unknown): AuthenticateResult {
 	return {
 		code,
 		message: error instanceof Error ? error.message : "Unknown authentication error.",

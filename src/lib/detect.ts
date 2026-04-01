@@ -25,11 +25,26 @@ export async function detectPackageManager(
 	options: DetectPackageManagerOptions = {},
 ): Promise<PackageManager> {
 	const cwd = options.cwd ?? process.cwd();
+	const matches: PackageManager[] = [];
+	const matchedLockfiles: string[] = [];
 
 	for (const lockfile of LOCKFILES) {
 		if (await pathExists(join(cwd, lockfile.fileName))) {
-			return lockfile.packageManager;
+			matchedLockfiles.push(lockfile.fileName);
+			if (!matches.includes(lockfile.packageManager)) {
+				matches.push(lockfile.packageManager);
+			}
 		}
+	}
+
+	if (matches.length === 1) {
+		return matches[0] as PackageManager;
+	}
+
+	if (matches.length > 1) {
+		throw new DetectPackageManagerError(
+			`Could not detect a single package manager in ${cwd}. Found multiple lockfiles: ${matchedLockfiles.join(", ")}.`,
+		);
 	}
 
 	throw new DetectPackageManagerError(

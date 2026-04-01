@@ -2,11 +2,11 @@
 
 ## Name
 
-`az-npm-auth`
+`az-npm`
 
 ## Vision
 
-`az-npm-auth` is a zero-config CLI that authenticates local package manager configuration against Azure DevOps Artifacts feeds. It modernizes the current tool into a faster, more maintainable implementation built around Bun and modern TypeScript while preserving the simple developer experience that made the original useful.
+`az-npm` is a zero-config CLI that authenticates local package manager configuration against Azure DevOps Artifacts feeds. It modernizes the current tool into a faster, more maintainable implementation built around Bun and modern TypeScript while preserving the simple developer experience that made the original useful.
 
 ## Problem
 
@@ -30,12 +30,12 @@ Developers working with Azure DevOps package feeds often need to manually genera
 
 - Local auth succeeds for common Azure DevOps feed setups across all supported package managers
 - First-time setup completes without manual registry config edits in the common case
-- Core auth flow works both from Bun runtime and compiled binary distribution
+- Core auth flow works for the published Node-facing CLI and compiled binary distribution
 - Migration preserves the zero-config feel of the original tool for existing users
 
 ## Core Features
 
-1. Detect package manager from project files and current environment
+1. Detect package manager from project files and fail clearly when the project is ambiguous
 2. Discover Azure DevOps feed and registry details from local config
 3. Acquire token from the best available source, preferring Azure CLI and CI-friendly inputs
 4. Write credentials to the correct user-level config file for `npm`, `pnpm`, or `bun`
@@ -53,3 +53,4 @@ Developers working with Azure DevOps package feeds often need to manually genera
 - Azure CLI is the primary local authentication source
 - The initial migration should favor low-config compatibility over large surface-area expansion
 - Config writes should be limited to user-managed package-manager auth files
+- Bun is the maintainer toolchain, while Node is the default runtime for the published npm package

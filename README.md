@@ -4,7 +4,9 @@
 [![npm downloads](https://img.shields.io/npm/dm/%40eimerreis%2Faz-npm)](https://www.npmjs.com/package/@eimerreis/az-npm)
 [![Release](https://github.com/eimerreis/az-npm/actions/workflows/release.yml/badge.svg)](https://github.com/eimerreis/az-npm/actions/workflows/release.yml)
 
-Zero-config CLI that authenticates npm, pnpm, and bun against Azure DevOps Artifact private feeds using the Azure CLI.
+Zero-config CLI that authenticates npm, pnpm, and bun against Azure DevOps Artifacts private feeds using the Azure CLI.
+
+`az-npm` is published for the Node runtime and built with a Bun-based maintainer toolchain.
 
 ## Usage
 
@@ -17,6 +19,14 @@ Optional flags:
 ```bash
 npx @eimerreis/az-npm --token <token>
 npx @eimerreis/az-npm --cwd <path>
+```
+
+Exit codes:
+
+```text
+0  Authentication succeeded
+1  Token acquisition failed
+2  Detection, discovery, or write failed
 ```
 
 ## Development

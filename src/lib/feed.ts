@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { parse } from "ini";
+import { parse as parseIni } from "ini";
+import { parse as parseToml } from "smol-toml";
+
+import type { PackageManager } from "./detect.ts";
 
 const REGISTRY_PATTERNS = [
 	/(?<registry>(?:https?:)?\/\/pkgs\.dev\.azure\.com\/[^/\s]+(?:\/[^/\s]+)?\/_packaging\/[^/\s]+\/npm\/registry\/?)/gi,
@@ -24,9 +27,24 @@ export type AzureFeed = {
 
 export type DiscoverFeedsOptions = {
 	cwd?: string;
-	fileContents?: string;
-	filePath?: string;
+	packageManager?: PackageManager;
 };
+
+type BunfigDocument = {
+	install?: {
+		registry?: BunfigRegistryValue;
+		scopes?: Record<string, BunfigRegistryValue>;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+};
+
+type BunfigRegistryValue =
+	| string
+	| {
+			url?: unknown;
+			[key: string]: unknown;
+	  };
 
 export class DiscoverFeedsError extends Error {
 	constructor(message: string) {
@@ -36,27 +54,40 @@ export class DiscoverFeedsError extends Error {
 }
 
 export async function discoverFeeds(options: DiscoverFeedsOptions = {}): Promise<AzureFeed[]> {
-	const filePath = options.filePath ?? join(options.cwd ?? process.cwd(), ".npmrc");
-	const fileContents = options.fileContents ?? (await readProjectNpmrc(filePath));
-	const parsed = parse(fileContents) as Record<string, unknown>;
-	const registryScopes = new Map<string, Set<string>>();
+	const cwd = options.cwd ?? process.cwd();
 
-	for (const [key, value] of Object.entries(parsed)) {
-		collectCandidates(registryScopes, key, key);
-		if (typeof value === "string") {
-			collectCandidates(registryScopes, value, key);
+	if (options.packageManager === "bun") {
+		const bunfigPath = join(cwd, "bunfig.toml");
+		const bunfigContents = await readOptionalFile(bunfigPath);
+		if (bunfigContents !== null) {
+			const bunfigFeeds = discoverFeedsFromBunfigContents(bunfigContents);
+			if (bunfigFeeds.length > 0) {
+				return bunfigFeeds;
+			}
 		}
+
+		const npmrcPath = join(cwd, ".npmrc");
+		const npmrcContents = await readOptionalFile(npmrcPath);
+		if (npmrcContents !== null) {
+			const npmrcFeeds = discoverFeedsFromNpmrcContents(npmrcContents);
+			if (npmrcFeeds.length > 0) {
+				return npmrcFeeds;
+			}
+		}
+
+		throw new DiscoverFeedsError(
+			`Could not find an Azure DevOps registry in project bunfig.toml or .npmrc in ${cwd}.`,
+		);
 	}
 
-	const feeds = [...registryScopes.entries()]
-		.map(([candidate, scopes]) => parseAzureFeed(candidate, [...scopes]))
-		.filter((feed) => feed !== null);
-
-	if (feeds.length === 0) {
-		throw new DiscoverFeedsError(`Could not find an Azure DevOps npm registry in ${filePath}.`);
+	const filePath = join(cwd, ".npmrc");
+	const fileContents = await readProjectNpmrc(filePath);
+	const feeds = discoverFeedsFromNpmrcContents(fileContents);
+	if (feeds.length > 0) {
+		return feeds;
 	}
 
-	return feeds;
+	throw new DiscoverFeedsError(`Could not find an Azure DevOps npm registry in ${filePath}.`);
 }
 
 async function readProjectNpmrc(filePath: string): Promise<string> {
@@ -71,12 +102,55 @@ async function readProjectNpmrc(filePath: string): Promise<string> {
 	}
 }
 
-function collectCandidates(
+async function readOptionalFile(filePath: string): Promise<string | null> {
+	try {
+		return await readFile(filePath, "utf8");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			return null;
+		}
+
+		throw error;
+	}
+}
+
+function discoverFeedsFromNpmrcContents(fileContents: string): AzureFeed[] {
+	const parsed = parseIni(fileContents) as Record<string, unknown>;
+	const registryScopes = new Map<string, Set<string>>();
+
+	for (const [key, value] of Object.entries(parsed)) {
+		const scope = extractScope(key);
+		collectRegistryCandidates(registryScopes, key, scope);
+		if (typeof value === "string") {
+			collectRegistryCandidates(registryScopes, value, scope);
+		}
+	}
+
+	return parseFeeds(registryScopes);
+}
+
+function discoverFeedsFromBunfigContents(fileContents: string): AzureFeed[] {
+	const document = parseToml(fileContents) as BunfigDocument;
+	const registryScopes = new Map<string, Set<string>>();
+	const install = document.install;
+
+	collectRegistryCandidates(registryScopes, getBunfigRegistryUrl(install?.registry), null);
+
+	for (const [scope, value] of Object.entries(install?.scopes ?? {})) {
+		collectRegistryCandidates(registryScopes, getBunfigRegistryUrl(value), scope);
+	}
+
+	return parseFeeds(registryScopes);
+}
+
+function collectRegistryCandidates(
 	registryScopes: Map<string, Set<string>>,
-	input: string,
-	key: string,
+	input: string | null,
+	scope: string | null,
 ): void {
-	const scope = extractScope(key);
+	if (!input) {
+		return;
+	}
 
 	for (const pattern of REGISTRY_PATTERNS) {
 		for (const match of input.matchAll(pattern)) {
@@ -94,12 +168,24 @@ function collectCandidates(
 	}
 }
 
+function parseFeeds(registryScopes: Map<string, Set<string>>): AzureFeed[] {
+	return [...registryScopes.entries()]
+		.map(([candidate, scopes]) => parseAzureFeed(candidate, [...scopes]))
+		.filter((feed): feed is AzureFeed => feed !== null);
+}
+
 function parseAzureFeed(registryUrl: string, scopes: string[]): AzureFeed | null {
 	const devAzureMatch = registryUrl.match(DEV_AZURE_PATTERN);
 	if (devAzureMatch?.groups) {
+		const feed = devAzureMatch.groups.feed;
+		const organization = devAzureMatch.groups.organization;
+		if (!feed || !organization) {
+			return null;
+		}
+
 		return {
-			feed: devAzureMatch.groups.feed,
-			organization: devAzureMatch.groups.organization,
+			feed,
+			organization,
 			project: devAzureMatch.groups.project,
 			registryUrl,
 			scopes,
@@ -109,9 +195,15 @@ function parseAzureFeed(registryUrl: string, scopes: string[]): AzureFeed | null
 
 	const visualStudioMatch = registryUrl.match(VISUAL_STUDIO_PATTERN);
 	if (visualStudioMatch?.groups) {
+		const feed = visualStudioMatch.groups.feed;
+		const organization = visualStudioMatch.groups.organization;
+		if (!feed || !organization) {
+			return null;
+		}
+
 		return {
-			feed: visualStudioMatch.groups.feed,
-			organization: visualStudioMatch.groups.organization,
+			feed,
+			organization,
 			project: visualStudioMatch.groups.project,
 			registryUrl,
 			scopes,
@@ -125,6 +217,18 @@ function parseAzureFeed(registryUrl: string, scopes: string[]): AzureFeed | null
 function normalizeRegistryUrl(value: string): string {
 	const withProtocol = value.startsWith("//") ? `https:${value}` : value;
 	return withProtocol.endsWith("/") ? withProtocol : `${withProtocol}/`;
+}
+
+function getBunfigRegistryUrl(value: BunfigRegistryValue | undefined): string | null {
+	if (typeof value === "string") {
+		return value;
+	}
+
+	if (value && typeof value === "object" && typeof value.url === "string") {
+		return value.url;
+	}
+
+	return null;
 }
 
 function extractScope(key: string): string | null {

@@ -40,10 +40,10 @@ describe("detectPackageManager", () => {
 		expect(await detectPackageManager({ cwd })).toBe("npm");
 	});
 
-	test("prefers bun when multiple lockfiles are present", async () => {
+	test("throws a typed error when multiple package managers are present", async () => {
 		const cwd = await createProjectWith("package-lock.json", "pnpm-lock.yaml", "bun.lock");
 
-		expect(await detectPackageManager({ cwd })).toBe("bun");
+		await expect(detectPackageManager({ cwd })).rejects.toBeInstanceOf(DetectPackageManagerError);
 	});
 
 	test("throws a typed error when no known lockfile exists", async () => {
