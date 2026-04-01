@@ -9,6 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -48,8 +49,6 @@ jobs:
 
       - name: Publish to npm
         if: steps.package-version.outputs.changed == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: bun run release
 
       - name: Create GitHub release

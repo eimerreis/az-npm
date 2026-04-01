@@ -34,4 +34,4 @@ bun run build
 bun run changeset
 ```
 
-Push to `master`. The release workflow versions the package from pending changesets, publishes only when `package.json` changes, and creates a matching GitHub release.
+Push to `master`. The release workflow versions the package from pending changesets, publishes only when `package.json` changes, and creates a matching GitHub release using npm trusted publishing.
