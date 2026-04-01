@@ -22,43 +22,6 @@ flowchart TD
     Auth --> Output[CLI result and exit code]
 ```
 
-## Key Components
-
-### `src/cli.ts`
-
-- Parse CLI arguments
-- Handle terminal output and exit codes
-- Call the core auth flow
-
-### `src/index.ts`
-
-- Expose the public API for programmatic use if needed
-
-### `src/lib/auth.ts`
-
-- Coordinate detection, feed resolution, token lookup, and config writes
-- Return structured success or failure results
-
-### `src/lib/detect.ts`
-
-- Infer package manager from lockfiles, config files, or explicit flags
-
-### `src/lib/feed.ts`
-
-- Parse and validate Azure DevOps registry/feed URLs from project config
-
-### `src/lib/token.ts`
-
-- Resolve credentials in priority order: cached input, CI env, Azure CLI
-
-### `src/lib/npmrc.ts`
-
-- Read and update `.npmrc`-compatible auth entries for npm and pnpm
-
-### `src/lib/bunfig.ts`
-
-- Read and update `bunfig.toml` auth entries for Bun
-
 ## Core Data Flow
 
 1. User runs the CLI inside a project or CI job.
