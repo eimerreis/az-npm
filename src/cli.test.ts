@@ -34,7 +34,7 @@ describe("runCli", () => {
 
 		await runCli(["--version"], { log });
 
-		expect(log).toHaveBeenCalledWith("0.1.0");
+		expect(log).toHaveBeenCalledWith("0.2.0");
 	});
 
 	test("documents exit codes and public name in help text", () => {

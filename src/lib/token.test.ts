@@ -1,6 +1,17 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { ResolveTokenError, resolveToken } from "./token.ts";
+import { getAzureCliSpawnOptions, ResolveTokenError, resolveToken } from "./token.ts";
+
+describe("getAzureCliSpawnOptions", () => {
+	test("uses a shell on Windows so az.cmd can run", () => {
+		expect(getAzureCliSpawnOptions("win32").shell).toBe(true);
+	});
+
+	test("does not use a shell on non-Windows platforms", () => {
+		expect(getAzureCliSpawnOptions("darwin").shell).toBe(false);
+		expect(getAzureCliSpawnOptions("linux").shell).toBe(false);
+	});
+});
 
 describe("resolveToken", () => {
 	test("returns an explicit token before any other source", async () => {

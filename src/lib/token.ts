@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { type SpawnOptions, spawn } from "node:child_process";
 
 const AZURE_DEVOPS_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798";
 
@@ -90,11 +90,18 @@ export async function resolveToken(options: ResolveTokenOptions = {}): Promise<R
 	};
 }
 
+export function getAzureCliSpawnOptions(
+	platform: NodeJS.Platform = process.platform,
+): Pick<SpawnOptions, "shell" | "stdio"> {
+	return {
+		shell: platform === "win32",
+		stdio: ["ignore", "pipe", "pipe"],
+	};
+}
+
 async function runAzureCli(args: string[]): Promise<AzureCliResponse> {
 	return await new Promise((resolve, reject) => {
-		const subprocess = spawn("az", args, {
-			stdio: ["ignore", "pipe", "pipe"],
-		});
+		const subprocess = spawn("az", args, getAzureCliSpawnOptions());
 
 		let stdout = "";
 		let stderr = "";
