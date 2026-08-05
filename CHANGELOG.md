@@ -1,5 +1,11 @@
 # @eimerreis/az-npm
 
+## 0.2.1
+
+### Patch Changes
+
+- 98f74f9: Run Azure CLI through a shell on Windows so `az.cmd` installations work.
+
 ## 0.2.0
 
 ### Minor Changes
