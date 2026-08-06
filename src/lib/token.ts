@@ -99,9 +99,25 @@ export function getAzureCliSpawnOptions(
 	};
 }
 
+export function getAzureCliInvocation(
+	args: string[],
+	platform: NodeJS.Platform = process.platform,
+): { args: string[]; command: string } {
+	if (platform === "win32") {
+		return { args: [], command: `az ${args.join(" ")}` };
+	}
+
+	return { args, command: "az" };
+}
+
 async function runAzureCli(args: string[]): Promise<AzureCliResponse> {
 	return await new Promise((resolve, reject) => {
-		const subprocess = spawn("az", args, getAzureCliSpawnOptions());
+		const invocation = getAzureCliInvocation(args);
+		const spawnOptions = getAzureCliSpawnOptions();
+		const subprocess =
+			invocation.args.length === 0
+				? spawn(invocation.command, spawnOptions)
+				: spawn(invocation.command, invocation.args, spawnOptions);
 
 		let stdout = "";
 		let stderr = "";
