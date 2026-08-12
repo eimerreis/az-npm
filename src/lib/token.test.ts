@@ -1,6 +1,11 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { getAzureCliSpawnOptions, ResolveTokenError, resolveToken } from "./token.ts";
+import {
+	getAzureCliInvocation,
+	getAzureCliSpawnOptions,
+	ResolveTokenError,
+	resolveToken,
+} from "./token.ts";
 
 describe("getAzureCliSpawnOptions", () => {
 	test("uses a shell on Windows so az.cmd can run", () => {
@@ -10,6 +15,24 @@ describe("getAzureCliSpawnOptions", () => {
 	test("does not use a shell on non-Windows platforms", () => {
 		expect(getAzureCliSpawnOptions("darwin").shell).toBe(false);
 		expect(getAzureCliSpawnOptions("linux").shell).toBe(false);
+	});
+});
+
+describe("getAzureCliInvocation", () => {
+	test("uses a complete command without separate arguments on Windows", () => {
+		expect(
+			getAzureCliInvocation(["account", "get-access-token", "--output", "json"], "win32"),
+		).toEqual({
+			args: [],
+			command: "az account get-access-token --output json",
+		});
+	});
+
+	test("uses direct command arguments on non-Windows platforms", () => {
+		const args = ["account", "get-access-token", "--output", "json"];
+
+		expect(getAzureCliInvocation(args, "darwin")).toEqual({ args, command: "az" });
+		expect(getAzureCliInvocation(args, "linux")).toEqual({ args, command: "az" });
 	});
 });
 
