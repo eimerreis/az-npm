@@ -1,5 +1,11 @@
 # @eimerreis/az-npm
 
+## 0.2.2
+
+### Patch Changes
+
+- e7c291d: Avoid Node.js DEP0190 warnings when running Azure CLI through a Windows shell.
+
 ## 0.2.1
 
 ### Patch Changes
